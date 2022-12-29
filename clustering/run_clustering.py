@@ -13,6 +13,7 @@ from ipaddress import IPv4Address
 
 
 import libs.config_anonymize as config
+from clustering.get_cluster_stat import *
 
 
 
@@ -310,6 +311,31 @@ model = AgglomerativeClustering(n_clusters = None, affinity='precomputed',
 model.fit(distance_matrix)
 HFR["cluster_id"] = model.labels_
 HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
+FNAME = config.CLUS_RES_FLOC
+HFR.to_csv(FNAME)
+
+
+FNAME = config.CLUS_RES_FLOC
+
+attacks_df = pd.read_csv(FNAME)
+attack_camp = []
+
+for cluster_id in set(attacks_df["y"]):
+    stats = get_attack_campaign_stats(attacks_df, cluster_id)
+    attack_camp.append(stats)
+    
+attack_camp = pd.DataFrame(attack_camp, columns=cols)
+attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False)
+
+
+all_features = ["id", "client_ip", "ISP", "DATE", "MIT_Mean", "MIT_Median", "SIT", "NR", "NU", "NUA", "FVU", "FF", "FPIB", "FSPIB", 
+     "FUIB", "FCIB", "FICIB", "FTP", "FNUA" , "AUPPU", "RCJ", "zxcvbn_1", "zxcvbn_0", "FIU", "os_json_cnt", "app_json_cnt", 
+     "browser_json_cnt" , "duo_responses", "usernames", "comp_users", "uniq_comp_users", "successful_usernames", "is_proxy", "y", "cluster_id"]
+
+fout = "Results.xlsx"
+writer = pd.ExcelWriter(fout, engine='xlsxwriter')
+HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
+attack_camp_stats[all_features].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
 
     
 
