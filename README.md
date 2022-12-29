@@ -10,7 +10,7 @@ Steps to run
 
 Questions?
 ---------------------
-We are always looking for ways to improve our codes and our pipeline of our tool. For any bugs please email at: mislam9@wisc.edu or create a pull request.
+We are always looking for ways to improve our codes and our pipeline of our tool. For any bugs/questions, please feel free to shoot an email at: [mislam9@wisc.edu](mailto:mislam9@wisc.edu) or create a pull request.
 
 Citations
 ------------------------------
