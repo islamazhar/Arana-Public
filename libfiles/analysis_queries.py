@@ -2,7 +2,8 @@ import mysql.connector
 import sys 
 import pandas as pd
 import os
-import config
+import libfiles.config_anonymize as config
+#import config as config
 import time as t
 import pickle
 import datetime
@@ -10,6 +11,9 @@ import decimal
 from sys import exit
 
 from datetime import *
+
+DATE_FORMAT = config.DATE_FORMAT
+MYSQL_DATE_FORMAT = config.MYSQL_DATE_FORMAT
 
 school = os.getenv("SCHOOL")
 assert(school is not None)
@@ -98,9 +102,7 @@ def get_where(username=None, result=None, pwd_in_breach=None, username_in_breach
     else:
         return "WHERE " + " AND ".join(ands) if len(ands) > 0 else ""
 
-# some data related herlper functions...
-DATE_FORMAT = '%Y-%m-%d' # My date formate
-MYSQL_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f' 
+ 
     
 def format_date(date_input): #Must be in DATE_FORMAT
     datetimeobject = datetime.strptime(date_input,DATE_FORMAT)
@@ -722,8 +724,7 @@ def get_dist_pwds_tried_per_day_for_user(username):
         unique_pwds.append(len(set(day[1])))
     return unique_pwds
 
-DATE_FORMAT = '%Y-%m-%d' # My date formate
-MYSQL_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
+
 
 def increase_date_by_one_day(date_input, days = 1):
     datetimeobject = datetime.strptime(date_input,DATE_FORMAT) + timedelta(days=days)

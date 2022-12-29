@@ -14,9 +14,11 @@ persistent_db = dict(
             'url': "",
             'port': 12345,
             'db_name': "",
+            'table': "",
             'ssl': '',
             'start': '',
             'end': '', 
+            'ip': '',
             },
         prod = {
             'user': "",
@@ -24,9 +26,11 @@ persistent_db = dict(
             'url': "",
             'port': 12345,
             'db_name': '',
+            'table': "",
             'ssl': '',
             'start': '',
-            'end': '',         
+            'end': '',
+            'ip': '',         
             }
         
     ),
@@ -37,10 +41,12 @@ persistent_db = dict(
             'password': password,
             'url': "",
             'port': 3306,
-            'db_name': 'analysis',
+            'db_name': '',
+            'table': "",
             'ssl': '',
-            'start': '2020-12-20',
-            'end': '2021-03-10',  
+            'start': '',
+            'end': '',
+            'ip': '',  
         },
         prod = {
             'user': '',
@@ -48,11 +54,17 @@ persistent_db = dict(
             'url': "",
             'port': 12345,
             'db_name': '',
+            'table': "",
             'ssl': '',
             'start': '',
-            'end': '',        
+            'end': '',
+            'ip': '',        
         }
     )
 )[school][build]
 
-
+# some data related herlper functions...
+DATE_FORMAT = '%Y-%m-%d' # My date formate
+MYSQL_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
+HFR_LOC = "data/HFR.csv"
+FILTERED_LSETS_LOC = "data/Filtered_IP_DATES.csv"

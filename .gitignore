@@ -131,3 +131,4 @@ dmypy.json
 ignoreme.txt
 config.py
 #config_anonymize.py
+*.csv

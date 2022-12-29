@@ -1,17 +1,24 @@
-'''
-This will output a CSV file of HFR <IP,DATE> pairs 
-'''
+import sys; sys.path.append("..")
+
+import numpy as np
+from scipy import stats
+import re
+import matplotlib.pyplot as plt
+import math
+import libfiles.config_anonymize as config
 
 
+from libfiles.analysis_queries import *
+
+##################### Setting the threshold for NR and FF ########################################
 Ts = {}
 columns = ["NR","FF"]
-# basic filter NR > 1 and FF > 0
 query = """ SELECT {} FROM ip_features where NR > 1 and FF > 0;
             """.format(",".join(col for col in columns))
 
 cursor.execute(query)
 rows  = cursor.fetchall()
-print("# of <IP, date> pairs", len(rows))
+print("# of <IP, date> pairs fetched is = ", len(rows))
 
 
 Ncols = len(columns)
@@ -53,61 +60,39 @@ print("NR", stats.mode(Ts["NR"]))
 plt.show()
 
 
-# plt.plot(range(1,101), Ts["UWR"][1:101])
-# plt.xlabel("Percentile")
-# plt.ylabel("UWR")
-# plt.show()
 
-
-# Fetching data based on the 80th percentile.
-# can you use Kneeplot???
-Ts = {}
-# Ts["FF"] = 0.8
-# Ts["NR"] = 7
-
+# After observing the graph of NR and NU we set the threshold for NR and FF
 Ts["FF"] = 0.5
 Ts["NR"] = 3
 
 
-school_VPNs = ["72.33.0.0/16", "144.92.0.0/16",  "128.104.0.0/16", "128.105.0.0/16", "146.151.0.0/17", 
-              "146.151.128.0/17", "198.133.224.0/24", "198.133.225.0/24", "198.51.254.0/24"]
 
-
-patterns = ["(.*)university(.*)", "(.*)Wisc(.*)",  "(.*)Institute(.*)", "(.*)of(.*)Technology(.*)",   "(.*)School(.*)", 
-            "(.*)Academy(.*)"]
+######################## Filtering SCHOOL VPNS ###########################
 from ipaddress import ip_address, ip_network
+
+
+SCHOOL_VPNS = ["72.33.0.0/16", "144.92.0.0/16",  "128.104.0.0/16", "128.105.0.0/16", "146.151.0.0/17", 
+              "146.151.128.0/17", "198.133.224.0/24", "198.133.225.0/24", "198.51.254.0/24"]
+PATTERNS = ["(.*)university(.*)", "(.*)Wisc(.*)",  "(.*)Institute(.*)", "(.*)of(.*)Technology(.*)",   "(.*)School(.*)", 
+            "(.*)Academy(.*)"]
 
 def is_school_vpn(ip, ISP):
     myip = ip_address(ip)
-    for school_VPN in school_VPNs:
+    for school_VPN in SCHOOL_VPNS:
         other_subnet = ip_network(school_VPN)
         if myip in other_subnet:
             return True
     if ISP is None:
         return False
-    for pat in patterns:
+    for pat in PATTERNS:
         res = re.search(pat, ISP, re.IGNORECASE)
         if res is not None:
             return True
     return False
 
-def get_usernames_with_success_duo(ip, date):
-    success_unames = set()
-    query = """SELECT username, duo_id from attempts where client_ip = %s and cast(timestamp as date) = %s;"""
-    query2 = """SELECT result from sso.duologs where id={};"""
-    df = pd.read_sql(query,  db, params = (ip, date))
-    for uname, duo_id in zip(df["username"], df["duo_id"]):
-        
-        if duo_id is None or math.isnan(duo_id):
-            continue
-        cursor.execute(query2.format(duo_id))
-        for  res in cursor:
-            if res[0] == "success":
-                success_unames.add(uname)
-    return success_unames
-
-
-# 1. Filtering based on DUO_completed > 0
+HFR_LOC = config.HFR_LOC
+HFR = pd.read_sql(HFR_LOC)
+# 1. Filtering based on DUO_completed > 0. Make sure to run the `update_duo_entries.py before....`
 df = HFR.query("success == 0")
 N = len(df)
 print("Filtering based on DUO completed", len(HFR) - N )
@@ -123,16 +108,11 @@ N = len(df)
 
 
 # 3. Filtering Malformed Client..
-df = df.query("(AUPPU*NU)/NR > 0.10")
+df = df.query("(AUP*NU)/NR > 0.10")
 print("Malformed clients", N  - len(df))
 print("All IP, DATE pairs after filtering...", len(df))
 
 
-# svaing HFR.
-df.to_csv("Filtered_IP_DATES.csv", index=False)
-
-
-query = f"SELECT *, json_extract(duo_responses, '$.success') > 0 as success from ip_features where FF > 0.8 and NR > 7;"
-HFR = pd.read_sql(query, db)
-print(len(HFR))
-HFR
+# svaing filtered HFR.
+FILTERED_LSETS_LOC = config.FILTERED_LSETS_LOC
+df.to_csv(FILTERED_LSETS_LOC, index=False) # clustering can be run on these Lsets

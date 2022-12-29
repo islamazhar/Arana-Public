@@ -4,7 +4,7 @@
 # heuristics.py has most of the updated/newest heuristics, but leaving
 # this in case it has any other heuristics we need.
 #####################################################################
-from analysis_queries import create_connection, get_where, school, pers_config
+from libfiles.analysis_queries import create_connection, get_where, school, pers_config
 from ipwhois import IPWhois
 from pprint import pprint
 

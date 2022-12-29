@@ -43,3 +43,20 @@ def get_all(ip):
 #get_all("71.206.171.238")
 #get_all("108.169.200.95")
 #get_all("212.102.45.93")
+
+from user_agents import parse
+
+def get_os_name(ua_string):
+    try:
+        user_agent = parse(ua_string)
+        return user_agent.os.family
+    except Exception as e:
+        return "NA"
+    
+    
+def get_app_name():
+    pass
+
+def get_browser_family_name():
+    pass 
+    

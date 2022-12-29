@@ -1,22 +1,23 @@
-import sys; sys.path.append("..")
+import sys 
+sys.path.append("..")
 
-from analysis_queries import *
-from investigate_ip import *
-import config
+from libfiles.analysis_queries import *
+from libfiles.investigate_ip import *
 
 
 db, cursor = create_connection()
-school = os.getenv("SCHOOL")
-assert(school is not None)
 
+""" 
+    [NR > 1 and FF > 0] get those IPs which have 
+    at least one failed attempts and at least 2 attempts  
+"""
 def get_ips(start=None, end=None):
     where = get_where(start=start, end=end)    
     query = """
             SELECT client_ip, COUNT(id) as c, SUM(result) as k
             FROM {} {} 
             GROUP BY {}
-            HAVING c >= 2 AND c > k""".format(TABLE_NAME, where, IP_TYPE) 
-            # at least one failed attempts and at least 2 attempts
+            HAVING c >= 2 AND c > k""".format(pers_config['table'], where, pers_config['ip']) 
     
     cursor.execute(query)
     ips = set([row[0] for row in cursor])
@@ -31,7 +32,7 @@ def get_values(ip, start=None, end=None):
         results["FVU"] = get_num_uniq_valid_users(ip, start=start, end=end)/results["NU"] 
         
 
-        # uniq_username, uniq_password, uw_ratio
+        # uniq_username, uniq_password, username_password_ratio
         results["NP"] = unique_passwords_for_ip(ip,start=start, end=end) 
          
         if results["NP"] is None or results["NP"] < 1:
@@ -64,7 +65,7 @@ def get_values(ip, start=None, end=None):
                     result_code_dict[result_code_name]  = [0, 0]
 
         results["RCJ"] = json.dumps(result_code_dict)
-        # cred_stuffing
+        # cred_stuffing stats
         results["FPIB"] = get_num_password_in_breach(ip, start=start, end=end)/results["NR"] 
         results["FUIB"] = get_num_users_in_breach(ip, start=start, end=end)/results["NR"]
         results["FCIB"] = get_num_pair_in_breach(ip, start=start, end=end)/results["NR"]
@@ -78,7 +79,7 @@ def get_values(ip, start=None, end=None):
            
         results["zxcvbn_score_1"] = zxcvbn_scores_for_ip(ip,start=start, end=end, zxcvbn=1)
         results["zxcvbn_score_0"] = zxcvbn_scores_for_ip(ip,start=start, end=end, zxcvbn=0)
-        results["AAPU"] = get_avg_attempts_per_user(ip,start=start,end=end)
+        results["APU"] = get_avg_attempts_per_user(ip,start=start,end=end)
         results["ISP"] = get_ISP_name(ip)
    
         return results
@@ -162,7 +163,7 @@ def insert_row(ips):
                     FICIB, 
                     FTP,
                     FNUA, 
-                    AAU,
+                    AUP,
                     UWR,
                     RCJ,
                     zxcvbn_1,
@@ -184,7 +185,7 @@ def insert_row(ips):
                                        num_uniq_valid_users/num_uniq_username,
                                        1.0 - num_success/num_attempts, 
                                        breach_pws/num_attempts,
-                                       -1 if breach_pws == 0 else num_of_strong_passwords_in_breach/breach_pws, #[fixme]: Ask Rahul that it should be divied by `breach_pws`
+                                       -1 if breach_pws == 0 else num_of_strong_passwords_in_breach/breach_pws,
                                        breach_users/num_attempts, 
                                        breach_uw_pair/num_attempts,
                                        incorrect_credentials_uwpair_In_Breach/num_attempts, 
@@ -200,12 +201,12 @@ def insert_row(ips):
                                       ))
         except Exception as e:
                 print("Error in inserting rows: {}".format(str(e)))
-        #break
 
 if __name__ == '__main__':
-    today = "2020-12-20"
+    today = pers_config['start']
+    last_day = pers_config['end']
 
-    while today != "2021-01-25":
+    while today < last_day:
         start = format_date(today)
         end = increase_date_by_one_day(today)
         ips = get_ips(start=start, end=end)
