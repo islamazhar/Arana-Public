@@ -1,2 +1,7 @@
 user_agents
 ast
+kneed
+pandas
+numpy
+sklearn
+geoip2.database

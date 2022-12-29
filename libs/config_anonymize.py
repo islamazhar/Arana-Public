@@ -68,3 +68,4 @@ DATE_FORMAT = '%Y-%m-%d' # My date formate
 MYSQL_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 HFR_LOC = "data/HFR.csv"
 FILTERED_LSETS_LOC = "data/Filtered_IP_DATES.csv"
+DISTANCE_MATRIX_FLOC = "data/distance_matrix_HFR"

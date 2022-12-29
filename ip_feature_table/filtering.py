@@ -5,10 +5,10 @@ from scipy import stats
 import re
 import matplotlib.pyplot as plt
 import math
-import libfiles.config_anonymize as config
+import libs.config_anonymize as config
 
 
-from libfiles.analysis_queries import *
+from libs.analysis_queries import *
 
 ##################### Setting the threshold for NR and FF ########################################
 Ts = {}

@@ -1,8 +1,8 @@
 import sys; sys.path.append("..")
 
-from libfiles.analysis_queries import *
-from libfiles.investigate_ip import *
-from libfiles.whois import *
+from libs.analysis_queries import *
+from libs.investigate_ip import *
+from libs.whois import *
 
 from datetime import *
 

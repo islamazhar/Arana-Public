@@ -3,8 +3,8 @@ sys.path.append("..")
 
 import datetime
 
-from libfiles.investigate_ip import *
-from libfiles.analysis_queries import *
+from libs.investigate_ip import *
+from libs.analysis_queries import *
 import datetime
 import pandas as pd
 import json
