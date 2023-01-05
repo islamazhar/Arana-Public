@@ -225,13 +225,13 @@ def compute_distance_matrix_serial(df):
     distance_matrix = np.zeros((len(df), len(df)))
     for i in range(0, len(df)):
         if i % 50 == 0:
-            print(f"Done with {i*100.00/len(df)} %")
+            print(f"Done with {i*100.00/len(df):.2f} %")
         for j in range(i+1,len(df)):
             distance = my_distance_fn(df.iloc[i], df.iloc[j]) #check the sanity of the custom distance function.
             distance_matrix[i][j] = distance_matrix[j][i]  = distance
     distance_matrix = normalize(distance_matrix)
     e = time.time()
-    print("Time taken ", e-s)
+    print(f"Time taken  {e-s:.2f}")
     return distance_matrix
 
 
@@ -262,7 +262,7 @@ def compute_distance_matrix_parallel(df):
                 print(c)
     e = time.time()
     #distance_matrix = normalize(distance_matrix)
-    print("Time taken = ", e-s, " Len of df pairs= ", len(args))
+    print(f"Time taken =  {e-s:.2f} Len of df pairs= {len(args):,}")
 
     return distance_matrix
 

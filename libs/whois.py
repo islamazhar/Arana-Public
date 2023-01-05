@@ -54,9 +54,30 @@ def get_os_name(ua_string):
         return "NA"
     
     
-def get_app_name():
-    pass
+def get_app_name(ua_string):
+    try:
+        user_agent = parse(ua_string)
+        if user_agent.is_pc:
+            return 'desktop'
+        if user_agent.is_mobile:
+            return 'mobileweb' 
+        else:
+            return 'unknown'
+    except Exception as e:
+        return "None"
 
-def get_browser_family_name():
-    pass 
+def get_browser_family_name(ua_string):
+    try:
+        user_agent = parse(ua_string)
+        return user_agent.browser.family if user_agent.browser.family is not None else user_agent.browser.family
+    except Exception as e:
+        return "None"
+    
+def get_browser_version(ua_string):
+    
+    try:
+        user_agent = parse(ua_string)
+        return user_agent.browser.version if user_agent.browser.version is not None else user_agent.browser.version
+    except Exception as e:
+        return "None"
     
