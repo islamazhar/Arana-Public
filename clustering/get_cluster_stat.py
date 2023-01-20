@@ -1,13 +1,15 @@
 import pandas as pd
-import libs.config_anonymize as config
+# import libs.config_anonymize as config
+import libs.config as config
+import os
 
 """ getting stats of the clusters """
 cols = ["NR", "NU", "FNUA", "AUPPU", "FUIB", "FCIB", "FPIB", "FTP", "FSPIB", "# ISP",  "DATES_active", "# IPS", "zxcvbn_0","zxcvbn_1", "comp_users", "flagged_comp_users", "total_pairs", "FF", "FVU", "y"] # Average Acitivity duration per day?
 # id,client_ip,ISP,DATE,MIT_Mean,MIT_Median,SIT,NR,NU,NP,NUA,FVU,FF,FPIB,FSPIB,FUIB,FCIB,FICIB,FTP,FNUA,UWR,RCJ,zxcvbn_1,zxcvbn_0,comments,IR,AUPPU,FIU,os_json_cnt,app_json_cnt,browser_json_cnt,consec_days,duo_responses,is_malicious,comp_users,is_proxy,uniq_comp_users,usernames,cluster_id
 
 # save flagged users
-FNAME = config.COMP_USR_FLOC
-flagged_users_df = pd.read_csv(FNAME)
+FNAME = os.getcwd() + "/../" + config.COMP_USR_FLOC
+flagged_users_df = pd.read_csv(FNAME, compression="bz2")
 
 
 def get_common_flagged_users(comp_users):

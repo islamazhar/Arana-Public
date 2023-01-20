@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import math
 import os
 # import libs.config_anonymize as config
-import libs.config as config
+# import libs.config as config
 
 
 from libs.analysis_queries import *

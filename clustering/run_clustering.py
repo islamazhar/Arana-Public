@@ -1,5 +1,5 @@
 import sys
-from unicodedata import name; sys.path.append("..")
+sys.path.append("..")
 
 import ast
 import pandas as pd
@@ -7,20 +7,23 @@ import numpy as np
 import time 
 import copy
 import matplotlib.pyplot as plt
+import os
 
 from sklearn.cluster import AgglomerativeClustering
 from kneed import KneeLocator
 from ipaddress import IPv4Address
 
 
-import libs.config_anonymize as config
+# import libs.config_anonymize as config
+import libs.config as config 
+
 from clustering.get_cluster_stat import *
 
 
 
 
-fname = config.FILTERED_LSETS_LOC
-HFR = pd.read_csv(fname)
+fname = os.getcwd() + "/../" + config.FILTERED_LSETS_LOC
+HFR = pd.read_csv(fname, compression="bz2")
 HFR['DATE'] = HFR['DATE'].astype('datetime64[ns]')
 
 
@@ -259,10 +262,10 @@ def compute_distance_matrix_parallel(df):
             distance = r[2]
             distance_matrix[x][y] = distance_matrix[y][x]  = distance
             c +=1
-            if c%100000 == 0:
+            if c%1000 == 0:
                 print(c)
     e = time.time()
-    #distance_matrix = normalize(distance_matrix)
+    # distance_matrix = normalize(distance_matrix)
     print(f"Time taken =  {e-s:.2f} Len of df pairs= {len(args):,}")
 
     return distance_matrix
@@ -273,8 +276,8 @@ computing the distance function
 Warning it may take a long time to finish...
 """
 data = copy.copy(HFR)
-load = True # Change it to false if want to load from file..
-FLOC = config.DISTANCE_MATRIX_FLOC
+load = False # Change it to false if want to load from file..
+FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
 
 if load == True:
     distance_matrices = np.load(f"{FLOC}.npz")["arr_0"]
@@ -302,7 +305,7 @@ def calculate_distance_threshold(X):
     return kneedle.knee, kneedle.knee_y
 
 
-if name == "__main__":
+if __name__ == '__main__':
     N = len(HFR)
     distance_threshold, _ = calculate_distance_threshold(distance_matrix)
     print("Distance Threshold is = ", distance_threshold)
@@ -312,7 +315,7 @@ if name == "__main__":
     model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', 
                                     linkage='average', distance_threshold = distance_threshold)
     model.fit(distance_matrix)
-    HFR["cluster_id"] = model.labels_
+    HFR["cluster_id"] = model.labels_ #[TODO:] Assign ranks as well.
     HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
     FNAME = config.CLUS_RES_FLOC
     HFR.to_csv(FNAME)
