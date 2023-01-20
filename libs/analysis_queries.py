@@ -2,8 +2,8 @@ import mysql.connector
 import sys 
 import pandas as pd
 import os
-import libfiles.config_anonymize as config
-#import config as config
+# import libs.config_anonymize as config
+import libs.config as config
 import time as t
 import pickle
 import datetime
