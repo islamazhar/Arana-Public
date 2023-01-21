@@ -8,12 +8,8 @@ import matplotlib.pyplot as plt
 import math
 import os
 # import libs.config_anonymize as config
-<<<<<<< HEAD
 import libs.config as config
 pers_config = config.persistent_db
-=======
-# import libs.config as config
->>>>>>> 0a7d3e6bd4645bd63c50d11758da6cf6f28c606a
 
 
 from libs.analysis_queries import *

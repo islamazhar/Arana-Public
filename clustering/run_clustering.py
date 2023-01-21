@@ -16,6 +16,11 @@ from ipaddress import IPv4Address
 
 # import libs.config_anonymize as config
 import libs.config as config 
+<<<<<<< HEAD
+=======
+
+from clustering.get_cluster_stat import *
+>>>>>>> 0a7d3e6bd4645bd63c50d11758da6cf6f28c606a
 
 from clustering.get_cluster_stat import *
 
@@ -262,7 +267,11 @@ def compute_distance_matrix_parallel(df):
             distance = r[2]
             distance_matrix[x][y] = distance_matrix[y][x]  = distance
             c +=1
+<<<<<<< HEAD
             if c % 1000000 == 0:
+=======
+            if c%1000 == 0:
+>>>>>>> 0a7d3e6bd4645bd63c50d11758da6cf6f28c606a
                 print(c)
     e = time.time()
     # distance_matrix = normalize(distance_matrix)
@@ -274,7 +283,11 @@ def compute_distance_matrix_parallel(df):
 """ Computing the distance function. [Warning] it may take sometime to finish...
 """
 data = copy.copy(HFR)
+<<<<<<< HEAD
 load = True # Change it to false if want to load from file..
+=======
+load = False # Change it to false if want to load from file..
+>>>>>>> 0a7d3e6bd4645bd63c50d11758da6cf6f28c606a
 FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
 
 if load == True:
@@ -313,6 +326,7 @@ if __name__ == '__main__':
     model.fit(distance_matrix)
     HFR["cluster_id"] = model.labels_ #[TODO:] Assign ranks as well.
     HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
+<<<<<<< HEAD
     FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
     HFR.to_csv(FNAME)
 
@@ -346,6 +360,33 @@ if __name__ == '__main__':
     writer = pd.ExcelWriter(fout, engine='xlsxwriter')
     HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
     attack_camp_stats[COLS].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
+=======
+    FNAME = config.CLUS_RES_FLOC
+    HFR.to_csv(FNAME)
+
+
+    FNAME = config.CLUS_RES_FLOC
+
+    attacks_df = pd.read_csv(FNAME)
+    attack_camp = []
+
+    for cluster_id in set(attacks_df["y"]):
+        stats = get_attack_campaign_stats(attacks_df, cluster_id)
+        attack_camp.append(stats)
+        
+    attack_camp = pd.DataFrame(attack_camp, columns=cols)
+    attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False)
+
+
+    all_features = ["id", "client_ip", "ISP", "DATE", "MIT_Mean", "MIT_Median", "SIT", "NR", "NU", "NUA", "FVU", "FF", "FPIB", "FSPIB", 
+        "FUIB", "FCIB", "FICIB", "FTP", "FNUA" , "AUPPU", "RCJ", "zxcvbn_1", "zxcvbn_0", "FIU", "os_json_cnt", "app_json_cnt", 
+        "browser_json_cnt" , "duo_responses", "usernames", "comp_users", "uniq_comp_users", "successful_usernames", "is_proxy", "y", "cluster_id"]
+
+    fout = "Results.xlsx"
+    writer = pd.ExcelWriter(fout, engine='xlsxwriter')
+    HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
+    attack_camp_stats[all_features].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
+>>>>>>> 0a7d3e6bd4645bd63c50d11758da6cf6f28c606a
 
     
 
