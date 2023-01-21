@@ -63,13 +63,13 @@ persistent_db = dict(
     )
 )[school][build]
 
-# some data related herlper functions...
+""" some data related herlper functions
+"""
 DATE_FORMAT = '%Y-%m-%d' # My date formate
 MYSQL_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
 
-""" 
-File names saved in data folder.
+""" File names saved in data folder.
 """
 HFR_LOC = "data/HFR.csv"
 FILTERED_LSETS_LOC = "data/Filtered_IP_DATES.csv"

@@ -4,9 +4,11 @@
 # heuristics.py has most of the updated/newest heuristics, but leaving
 # this in case it has any other heuristics we need.
 #####################################################################
-from libfiles.analysis_queries import create_connection, get_where, school, pers_config
-from ipwhois import IPWhois
-from pprint import pprint
+import sys; sys.path.append("..")
+
+from libs.analysis_queries import create_connection, get_where, school, pers_config
+from libs.whois import get_ISP_name
+
 
 
 import time
@@ -15,30 +17,10 @@ import ast
 import pickle as pickle
 import json
 import numpy as np
-if school == "madison":
-    import geoip2.database
 
 db, cursor = create_connection()
 
-def get_whois(ip):
-    if school == "madison":
-        try:
-            return IPWhois(ip).lookup_whois()
-        except Exception as e:
-            print(e)
-            return None
-    else:
-        return None
-    
-def get_ISP_name(ip):
-    try:
-        with geoip2.database.Reader('/data/GeoMaxMind/GeoIP2-ISP.mmdb') as reader:
-            response = reader.isp(ip)
-        return response.isp
-    except Exception as e:
-        #print(e)
-        return "Exception in get_ISP_name func"
-    
+
 def get_successful_usernames_for_ip(ip, start=None, end=None):
     where = get_where(start=start, end=end, ip=ip, result=1)
     query = "SELECT username FROM {}  {};".format(pers_config["table"], where)
@@ -517,7 +499,7 @@ def case_study(ip, start=None, end=None):
     assigned_pwds = assign_pwds_per_day(ip, start=start, end=end)
     distances_usernames = get_distance_for_usernames(ip, start=start, end=end)
     ave_interarrival, max_ts, min_ts, total = get_ave_interarrival(ip, start=start, end=end)
-    whois = json.dumps(get_whois(ip), indent=4)
+
 
     with open("case_studies/{}.stats.txt".format(ip), "w") as f:
         f.write("==============================================\n")
@@ -1066,58 +1048,4 @@ def get_result_code_for_ip(ip, start=None, end=None):
 
 if __name__ == "__main__":
     # IPs to evaluate
-    #update_unique_pw_column(start='2021-01-16', end='2021-06-01', batch=100000)
-
-    # Usecase 1: Evaluate a predetermined set of IPs
-    ips = list(set([
-        "132.236.144.92",
-        "67.249.92.118",
-        "98.159.219.130",
-        "67.80.211.100",
-        "68.175.149.62",
-        "172.58.203.165",
-        "24.59.55.175",
-        "172.79.153.35",
-        "184.53.48.169",
-        "100.16.173.4"
-    ]))
-    start = "2021-02-14"
-    end = "2021-02-28"
-    for ip in ips:
-        print(ip)
-        case_study(ip, start=start, end=end)
-        case_assigned(ip, start=start, end=end)
-
-    ## Usecase 2: Find connected component for a specific IP, and evaluate all IPs in that component
-    #comp = find_connected_component("40.65.114.116", threshold_ratio=1.0, threshold_attempts=100)
-    #for ip in comp:
-    #    print(ip)
-    #    case_study(ip) #, end="2021-01-28 00:00:00")
-    #    case_assigned(ip)
-
-    ## Usecase 3a: Get top suspicious ips based on ratio success to failure and num attempts
-    #top = get_top_suspicious_ips(N=20, threshold_attempts=80, threshold_ratio=0.30, order_by="ratio") #1, start="2021-03-01")
-    #for row in top:
-    #    ip = row[0]
-    #    #print("{} : total {}, fail to success: {}, connected comp {}".format(ip, row[1], row[1] - row[2] / row[2], len(find_connected_component(ip))))
-    #    print("{} : total {}, fail to success: {}".format(ip, row[1], (row[1] - row[2]) / row[2]))
-
-    ## Usecase 3b: Get top suspicious usernames based on ratio success to failure and num attempts
-    #top = get_top_suspicious_usernames(N=10, threshold_attempts=100, threshold_ratio=0.30, order_by="ratio")
-    ## username, count, stf, fts
-    #for row in top:
-    #    username = row[0]
-    #    print("{} : total {}, success-to-fail {}".format(username, row[1], row[2]))
-
-    #    #if wanting to mark which things were in a connected component
-    #    #print("{} {}: total {}, successes {}, connected comp {}".format(ip, "in first connected comp" if ip in already else "", row[0], row[2], len(find_connected_component(ip))))
-
-    ## Other
-    #print(password_reuse_across_ips(ips))
-    #print(compare_successful_with_compromised(["50.16.153.186"], compromised_file="data/pass_encrypted.csv"))
-
-    ## Marina 
-    #get_interesting_credtweak_measurements(start="2021-02-01", end="2021-03-01", top_n=10)
-    #compare_successful_with_compromised(ips, compromised_file="data/pass_encrypted.csv")
-    #print(get_summary_stats_cs_6())
-#    get_specific_attack()
+    pass

@@ -2,13 +2,12 @@ import mysql.connector
 import sys 
 import pandas as pd
 import os
-import libfiles.config_anonymize as config
-#import config as config
+# import libs.config_anonymize as config
+import libs.config as config
 import time as t
 import pickle
 import datetime
 import decimal
-from sys import exit
 
 from datetime import *
 
@@ -43,7 +42,7 @@ def create_connection():
             if i >= 15: 
                 print("Could not connect to database. Exiting now.")
                 print(str(e))
-                exit(0)
+                sys.exit(0)
             t.sleep(1)
             i += 1
     return db, cursor

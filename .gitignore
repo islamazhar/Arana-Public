@@ -132,3 +132,6 @@ ignoreme.txt
 config.py
 #config_anonymize.py
 *.csv
+*.xlsx
+*.npz
+data/*

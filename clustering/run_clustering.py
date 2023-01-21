@@ -1,4 +1,5 @@
-import sys; sys.path.append("..")
+import sys
+sys.path.append("..")
 
 import ast
 import pandas as pd
@@ -6,26 +7,29 @@ import numpy as np
 import time 
 import copy
 import matplotlib.pyplot as plt
+import os
 
 from sklearn.cluster import AgglomerativeClustering
 from kneed import KneeLocator
 from ipaddress import IPv4Address
 
 
-import libs.config_anonymize as config
+# import libs.config_anonymize as config
+import libs.config as config 
+
 from clustering.get_cluster_stat import *
 
 
+pers_config = config.persistent_db
 
-
-fname = config.FILTERED_LSETS_LOC
-HFR = pd.read_csv(fname)
+fname = os.getcwd() + "/../" + config.FILTERED_LSETS_LOC
+HFR = pd.read_csv(fname, compression="bz2")
 HFR['DATE'] = HFR['DATE'].astype('datetime64[ns]')
 
 
 """Further preprocessing on HFR"""
 cols = ["os_json_cnt", "app_json_cnt", "browser_json_cnt",  "usernames", "successful_usernames"]
-
+# [fixme:] try json.loads() here...
 for col in cols:
     HFR[col] = [ast.literal_eval(x) for x in HFR[col]]
     if  "usernames" in col:
@@ -45,14 +49,14 @@ def my_distance_fn_args(args):
 import geoip2.database
 def get_subnet_mask(ip):
     try:
-        with geoip2.database.Reader('GeoIP2-ISP.mmdb') as reader: #fix the file location...
+        with geoip2.database.Reader(config.GEO_IP_FLOC + '/GeoIP2-ISP.mmd') as reader: #fix the file location...
             response = reader.isp(ip)
         return response.network
     except Exception as e:
         #if e is FileNotFoundError then send an warning...
         if e is FileNotFoundError or e is PermissionError:
             print("Expection in get_subnet_mask Error is = " + e)
-            exit(1)
+            sys.exit(1)
         return "NA"
 
 # Needs improvment...
@@ -91,7 +95,7 @@ def get_breach_db_distance(point1, point2): #6
               
     result = 0.0
     #features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
-    features = ["FPIB", "FTP"] #is removed to combine Digital Ocean one.
+    features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -181,7 +185,7 @@ def get_zxcvbn_ratio(point1, point2): #2
 
 def get_volumetric_distance(point1, point2): #2
     result = 0.0
-    features = ["NR", "NU" , "AUPPU"]
+    features = ["NR", "NU" , "AUPPU"] # \fixme column name
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -225,19 +229,19 @@ def compute_distance_matrix_serial(df):
     distance_matrix = np.zeros((len(df), len(df)))
     for i in range(0, len(df)):
         if i % 50 == 0:
-            print(f"Done with {i*100.00/len(df)} %")
+            print(f"Done with {i*100.00/len(df):.2f} %")
         for j in range(i+1,len(df)):
             distance = my_distance_fn(df.iloc[i], df.iloc[j]) #check the sanity of the custom distance function.
             distance_matrix[i][j] = distance_matrix[j][i]  = distance
     distance_matrix = normalize(distance_matrix)
     e = time.time()
-    print("Time taken ", e-s)
+    print(f"Time taken  {e-s:.2f}")
     return distance_matrix
 
 
 from multiprocessing import Pool
-import itertools
 import multiprocessing
+
 
 def compute_distance_matrix_parallel(df):
     s = time.time()
@@ -258,36 +262,32 @@ def compute_distance_matrix_parallel(df):
             distance = r[2]
             distance_matrix[x][y] = distance_matrix[y][x]  = distance
             c +=1
-            if c%100000 == 0:
+            if c % 1000000 == 0:
                 print(c)
     e = time.time()
-    #distance_matrix = normalize(distance_matrix)
-    print("Time taken = ", e-s, " Len of df pairs= ", len(args))
+    # distance_matrix = normalize(distance_matrix)
+    print(f"Time taken =  {e-s:.2f} Len of df pairs= {len(args):,}")
 
     return distance_matrix
 
 
-"""
-computing the distance function
-Warning it may take a long time to finish...
+""" Computing the distance function. [Warning] it may take sometime to finish...
 """
 data = copy.copy(HFR)
 load = True # Change it to false if want to load from file..
-FLOC = config.DISTANCE_MATRIX_FLOC
+FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
 
 if load == True:
-    distance_matrices = np.load(f"{FLOC}.npz")["arr_0"]
+    distance_matrix = np.load(f"{FLOC}.npz")["arr_0"]
 else:
     distance_matrix = compute_distance_matrix_parallel(data)
     np.savez(f"{FLOC}", distance_matrix)
     
 
-""" 
-calculating distance threshold
+""" calculating distance threshold
 """
 def calculate_distance_threshold(X):
-    model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', linkage='average', 
-                                    distance_threshold = 0)
+    model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', linkage='average', distance_threshold = 0)
     model.fit(X)
     xx = range(len(X)-1)
     yy = []
@@ -300,42 +300,52 @@ def calculate_distance_threshold(X):
     kneedle = KneeLocator(yy, xx, S=1.0, curve="convex", direction="decreasing", interp_method="polynomial")
     return kneedle.knee, kneedle.knee_y
 
-N = len(HFR)
-distance_threshold, _ = calculate_distance_threshold(distance_matrix)
-print("Distance Threshold is = ", distance_threshold)
+
+if __name__ == '__main__':
+    N = len(HFR)
+    distance_threshold, _ = calculate_distance_threshold(distance_matrix)
+    print("Distance Threshold is = ", distance_threshold)
 
 
-# running the clustering
-model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', 
-                                linkage='average', distance_threshold = distance_threshold)
-model.fit(distance_matrix)
-HFR["cluster_id"] = model.labels_
-HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
-FNAME = config.CLUS_RES_FLOC
-HFR.to_csv(FNAME)
+    # running the clustering
+    model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', 
+                                    linkage='average', distance_threshold = distance_threshold)
+    model.fit(distance_matrix)
+    HFR["cluster_id"] = model.labels_ #[TODO:] Assign ranks as well.
+    HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
+    FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
+    HFR.to_csv(FNAME)
 
 
-FNAME = config.CLUS_RES_FLOC
+    FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
 
-attacks_df = pd.read_csv(FNAME)
-attack_camp = []
+    attacks_df = pd.read_csv(FNAME)
+    attack_camp = []
+    COLS  =  [ "NR", "NU", "FNUA", "AUPPU", "FUIB", "FCIB", "FPIB", "FTP", "FSPIB",  "ISPs", "DATES_active", "IPs", "zxcvbn_0", "zxcvbn_1", "comp_users", "uniq_comp_users",  "# of Lsets", "FF", "FVU", "cluster_id"]
 
-for cluster_id in set(attacks_df["y"]):
-    stats = get_attack_campaign_stats(attacks_df, cluster_id)
-    attack_camp.append(stats)
-    
-attack_camp = pd.DataFrame(attack_camp, columns=cols)
-attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False)
+    for cluster_id in set(attacks_df["cluster_id"]):
+        stats = get_attack_campaign_stats(attacks_df, cluster_id)
+        attack_camp.append(stats)
+        
+    attack_camp = pd.DataFrame(attack_camp, columns=COLS)
+    attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False) # Apply the filter NR > 1K or NU > 1K or APU > 24?
 
 
-all_features = ["id", "client_ip", "ISP", "DATE", "MIT_Mean", "MIT_Median", "SIT", "NR", "NU", "NUA", "FVU", "FF", "FPIB", "FSPIB", 
-     "FUIB", "FCIB", "FICIB", "FTP", "FNUA" , "AUPPU", "RCJ", "zxcvbn_1", "zxcvbn_0", "FIU", "os_json_cnt", "app_json_cnt", 
-     "browser_json_cnt" , "duo_responses", "usernames", "comp_users", "uniq_comp_users", "successful_usernames", "is_proxy", "y", "cluster_id"]
+    all_features = ["id", "client_ip", "ISP", "is_proxy", #IP info
+                "DATE", "MIT_Mean", "MIT_Median", "SIT",  # Time info
+                "NR", "NU",  pers_config["auppu"], # Volumetric Info
+                "FVU", "FF", "FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP", "FNUA" , "FIU", #Breach DB info
+                "zxcvbn_1", "zxcvbn_0",  #Password strength
+                "os_json_cnt", "app_json_cnt", "browser_json_cnt" , "NUA", #User agent info
+                "RCJ", "duo_responses", # login and Duo result
+                "usernames", "successful_usernames", # usernames
+                "cluster_id"
+                ]
 
-fout = "Results.xlsx"
-writer = pd.ExcelWriter(fout, engine='xlsxwriter')
-HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
-attack_camp_stats[all_features].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
+    fout = os.getcwd() + "/../data/Results.xlsx"
+    writer = pd.ExcelWriter(fout, engine='xlsxwriter')
+    HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
+    attack_camp_stats[COLS].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
 
     
 

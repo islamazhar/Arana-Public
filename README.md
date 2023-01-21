@@ -10,7 +10,7 @@ Steps to run
 
 Questions?
 ---------------------
-We are always looking for ways to improve our codes and our pipeline of our tool. For any bugs please email at: mislam9@wisc.edu or create a pull request.
+We are always looking for ways to improve code and  pipeline of our tool. For any bugs/improvements/questions, please feel free to shoot an email at: [mislam9@wisc.edu](mailto:mislam9@wisc.edu) or create a pull request.
 
 Citations
 ------------------------------
@@ -20,7 +20,7 @@ If you use any part of our code or paper please cite our paper.
 @inproceedings {islamArayna23,
 author = {Mazharul Islam and Marina Sanusi Bohuk and Paul Chung and Thomas Ristenpart and Rahul Chatterjee},
 title = {Araña: Discovering and Characterizing Password Guessing Attacks in Practice},
-booktitle = {32nd USENIX Security Symposium (USENIX Security 22)},
+booktitle = {32nd USENIX Security Symposium (USENIX Security 23)},
 year = {2023},
 isbn = {},
 address = {},

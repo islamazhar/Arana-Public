@@ -1,5 +1,6 @@
 import geoip2.database
 
+
 def get_country_name(ip):
     try:
         with geoip2.database.Reader('/data/GeoMaxMind/GeoLite2-City.mmdb') as reader:
@@ -39,10 +40,6 @@ def get_all(ip):
     print(get_ASN_name(ip))
     print(get_city_name(ip))
 
-#get_all("3.87.190.104")
-#get_all("71.206.171.238")
-#get_all("108.169.200.95")
-#get_all("212.102.45.93")
 
 from user_agents import parse
 
@@ -54,9 +51,30 @@ def get_os_name(ua_string):
         return "NA"
     
     
-def get_app_name():
-    pass
+def get_app_name(ua_string):
+    try:
+        user_agent = parse(ua_string)
+        if user_agent.is_pc:
+            return 'desktop'
+        if user_agent.is_mobile:
+            return 'mobileweb' 
+        else:
+            return 'unknown'
+    except Exception as e:
+        return "None"
 
-def get_browser_family_name():
-    pass 
+def get_browser_family_name(ua_string):
+    try:
+        user_agent = parse(ua_string)
+        return user_agent.browser.family if user_agent.browser.family is not None else user_agent.browser.family
+    except Exception as e:
+        return "None"
+    
+def get_browser_version(ua_string):
+    
+    try:
+        user_agent = parse(ua_string)
+        return user_agent.browser.version if user_agent.browser.version is not None else user_agent.browser.version
+    except Exception as e:
+        return "None"
     

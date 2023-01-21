@@ -4,9 +4,9 @@ sys.path.append("..")
 
 from libs.analysis_queries import *
 from libs.investigate_ip import *
-#from heuristics import *
+# from heuristics import *
 from datetime import *
-from way import *
+
 
 import time
 import sys
@@ -46,7 +46,7 @@ for i, row in enumerate(cursor):
         if key not in values.keys() and IP in ip_features["IP"] and DATE in ip_features["DATE"]:
             values[key] = {"success": 0, "denied":0, "fraud":0}
         
-        values[key][resul] += 1
+        values[key][result] += 1
         break
     break
         
