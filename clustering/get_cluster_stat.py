@@ -45,7 +45,6 @@ def get_total_usernames(data):
     usernames = []
     for username in data["usernames"]:
         # print("username -->", username) # This is a set
-        username = ast.literal_eval(username)
         # username = json.loads(username)
         usernames.extend(username)
     return len(set(usernames))

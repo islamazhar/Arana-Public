@@ -85,4 +85,4 @@ RESULTS_FLOC = "/data/Results_wo_pws.xlsx"
 COMP_USER_TABLE = "sso.compreds"
 
 """ with or withour password based features"""
-WITH_PW_FLAG = False
+WITH_PW_FLAG = True

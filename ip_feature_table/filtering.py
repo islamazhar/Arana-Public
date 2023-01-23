@@ -16,13 +16,13 @@ from libs.analysis_queries import *
 
 ##################### Setting the threshold for NR and FF ########################################
 Ts = {}
-columns = ["NR","FF"]
-query = """ SELECT {} FROM ip_features where NR > 1 and FF > 0;
-            """.format(",".join(col for col in columns))
+# columns = ["NR","FF"]
+# query = """ SELECT {} FROM ip_features where NR > 1 and FF > 0;
+#             """.format(",".join(col for col in columns))
 
-cursor.execute(query)
-rows  = cursor.fetchall()
-print("# of <IP, date> pairs fetched is = ", len(rows))
+# cursor.execute(query)
+# rows  = cursor.fetchall()
+# print("# of <IP, date> pairs fetched is = ", len(rows))
 
 
 # Ncols = len(columns)

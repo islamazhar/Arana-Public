@@ -22,21 +22,21 @@ from clustering.get_cluster_stat import *
 
 pers_config = config.persistent_db
 
-fname = os.getcwd() + "/../" + config.FILTERED_LSETS_LOC
-HFR = pd.read_csv(fname, compression="bz2")
-HFR['DATE'] = HFR['DATE'].astype('datetime64[ns]')
+"""Further preprocessing on HFR
+"""
+def process_df(HFR):
+    HFR['DATE'] = HFR['DATE'].astype('datetime64[ns]')
+
+    cols = ["os_json_cnt", "app_json_cnt", "browser_json_cnt",  "usernames", "successful_usernames"]
+    # [fixme:] try json.loads() here...
+    for col in cols:
+        HFR[col] = [ast.literal_eval(x) for x in HFR[col]]
+        if  "usernames" in col:
+            HFR[col] = [ set([j   for  jj in sub for j in jj]) for sub in HFR[col]]
+    return HFR
 
 
 
-"""Further preprocessing on HFR"""
-cols = ["os_json_cnt", "app_json_cnt", "browser_json_cnt",  "usernames", "successful_usernames"]
-# [fixme:] try json.loads() here...
-for col in cols:
-    HFR[col] = [ast.literal_eval(x) for x in HFR[col]]
-    if  "usernames" in col:
-        HFR[col] = [ set([j   for  jj in sub for j in jj]) for sub in HFR[col]]
-
-print("Loaded # of HFR <IP,DATE> pairs", len(HFR))
 
 ######## custom distance func #########################
 
@@ -49,20 +49,23 @@ def my_distance_fn_args(args):
 
 import geoip2.database
 def get_subnet_mask(ip):
+    print(ip)
     try:
-        with geoip2.database.Reader(config.GEO_IP_FLOC + '/GeoIP2-ISP.mmd') as reader: #fix the file location...
+        with geoip2.database.Reader(os.getcwd() + "/../" + config.GEO_IP_FLOC + '/GeoIP2-ISP.mmdb') as reader:
             response = reader.isp(ip)
         return response.network
     except Exception as e:
+        # print(e)
         #if e is FileNotFoundError then send an warning...
         if e is FileNotFoundError or e is PermissionError:
             print("Expection in get_subnet_mask Error is = " + e)
             sys.exit(1)
         return "NA"
 
-# Needs improvment...
+
 def get_IP_distance(point1, point2): #2
     # IP, ISP
+    # print(point1["client_ip"], point2["client_ip"])
     if point1["client_ip"] == point2["client_ip"]:
         return 0
     if get_subnet_mask(point1["client_ip"]) == get_subnet_mask(point2["client_ip"]): #hwta if both of them is NA?
@@ -95,8 +98,8 @@ def get_interarrival_time(point1, point2):
 def get_breach_db_distance(point1, point2): #6
               
     result = 0.0
-    features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
-    # features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
+    # features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
+    features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -199,15 +202,16 @@ def my_distance_fn(point1, point2):
     
     result = 0.0
     v = 0.5/2.0
-    v1 = 0.5/(9.0 if config.WITH_PW_FLAG else 8.0)
+    v1 = 0.5/(9.0 if config.WITH_PW_FLAG else 7.0)
     
     result += v*get_IP_distance(point1, point2) 
     result += v*get_date_distance(point1, point2)
     
     if config.WITH_PW_FLAG:
         result += v1*get_breach_db_distance(point1, point2)
+        result += v1*get_zxcvbn_ratio(point1, point2)
+        
     result += v1*get_result_distance(point1, point2)
-    result += v1*get_zxcvbn_ratio(point1, point2)
     result += v1*get_user_agent_distance(point1, point2)
     result += v1*get_common_usernames(point1, point2)
     result += v1*get_volumetric_distance(point1, point2) # 0 - 3
@@ -272,25 +276,14 @@ def compute_distance_matrix_parallel(df):
     return distance_matrix
 
 
-""" Computing the distance function. [Warning] it may take sometime to finish...
-"""
-data = copy.copy(HFR)
-FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
-
-load = True and os.path.exists(FLOC) # Change it to false if want to load from file..
-
-if load == True:
-    print("loading distance matrix")
-    distance_matrix = np.load(f"{FLOC}.npz")["arr_0"]
-else:
-    print("creating distance matrix")
-    distance_matrix = compute_distance_matrix_parallel(data)
-    np.savez(f"{FLOC}", distance_matrix)
     
 
 """ calculating distance threshold
 """
 def calculate_distance_threshold(X):
+    
+    N = X.shape[0]
+    print("N = ", N)
     model = AgglomerativeClustering(n_clusters = None, affinity='precomputed', linkage='average', distance_threshold = 0)
     model.fit(X)
     xx = range(len(X)-1)
@@ -306,9 +299,34 @@ def calculate_distance_threshold(X):
 
 
 if __name__ == '__main__':
+    
+    fname = os.getcwd() + "/../" + config.FILTERED_LSETS_LOC
+    HFR = pd.read_csv(fname, compression="bz2")
+    HFR = process_df(HFR)
+
+    print("Loaded # of HFR <IP,DATE> pairs", len(HFR))
     N = len(HFR)
+    
+    
+    
+    """ Computing the distance function. [Warning] it may take sometime to finish...
+    """
+    data = copy.copy(HFR)
+    FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
+    # print(FLOC)
+    load = False and os.path.exists(FLOC + ".npz") # Change it to false if want to load from file..
+
+    if load == True:
+        print("loading distance matrix")
+        distance_matrix = np.load(f"{FLOC}.npz")["arr_0"]
+    else:
+        print("creating distance matrix")
+        distance_matrix = compute_distance_matrix_parallel(data)
+        np.savez(f"{FLOC}", distance_matrix)
+    
     distance_threshold, _ = calculate_distance_threshold(distance_matrix)
     print("Distance Threshold is = ", distance_threshold)
+    distance_threshold = 0.4537419792678621
 
 
     # running the clustering
@@ -316,19 +334,19 @@ if __name__ == '__main__':
                                     linkage='average', distance_threshold = distance_threshold)
     model.fit(distance_matrix)
     HFR["cluster_id"] = model.labels_ #[TODO:] Assign ranks as well.
-    HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
-    FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
-    HFR.to_csv(FNAME)
+    # HFR = HFR.sort_values(by=["cluster_id", "ISP", "DATE"], ascending=False)
+    # FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
+    # HFR.to_csv(FNAME)
 
 
-    FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
+    # FNAME = os.getcwd() + "/../" + config.CLUS_RES_FLOC
 
-    attacks_df = pd.read_csv(FNAME)
+    # attacks_df = pd.read_csv(FNAME)
     attack_camp = []
     COLS  =  [ "NR", "NU", "FNUA", "AUPPU", "FUIB", "FCIB", "FPIB", "FTP", "FSPIB",  "ISPs", "DATES_active", "IPs", "zxcvbn_0", "zxcvbn_1", "comp_users", "uniq_comp_users",  "# of Lsets", "FF", "FVU", "cluster_id"]
 
-    for cluster_id in set(attacks_df["cluster_id"]):
-        stats = get_attack_campaign_stats(attacks_df, cluster_id)
+    for cluster_id in set(HFR["cluster_id"]):
+        stats = get_attack_campaign_stats(HFR, cluster_id)
         attack_camp.append(stats)
         
     attack_camp = pd.DataFrame(attack_camp, columns=COLS)
