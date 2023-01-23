@@ -27,6 +27,7 @@ HFR = pd.read_csv(fname, compression="bz2")
 HFR['DATE'] = HFR['DATE'].astype('datetime64[ns]')
 
 
+
 """Further preprocessing on HFR"""
 cols = ["os_json_cnt", "app_json_cnt", "browser_json_cnt",  "usernames", "successful_usernames"]
 # [fixme:] try json.loads() here...
@@ -94,8 +95,8 @@ def get_interarrival_time(point1, point2):
 def get_breach_db_distance(point1, point2): #6
               
     result = 0.0
-    #features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
-    features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
+    features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
+    # features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -185,7 +186,7 @@ def get_zxcvbn_ratio(point1, point2): #2
 
 def get_volumetric_distance(point1, point2): #2
     result = 0.0
-    features = ["NR", "NU" , "AUPPU"] # \fixme column name
+    features = ["NR", "NU" , pers_config["auppu"]] # \fixme column name
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -198,13 +199,13 @@ def my_distance_fn(point1, point2):
     
     result = 0.0
     v = 0.5/2.0
-    v1 = 0.5/9.0
+    v1 = 0.5/(9.0 if config.WITH_PW_FLAG else 8.0)
     
     result += v*get_IP_distance(point1, point2) 
     result += v*get_date_distance(point1, point2)
     
-    
-    result += v1*get_breach_db_distance(point1, point2)
+    if config.WITH_PW_FLAG:
+        result += v1*get_breach_db_distance(point1, point2)
     result += v1*get_result_distance(point1, point2)
     result += v1*get_zxcvbn_ratio(point1, point2)
     result += v1*get_user_agent_distance(point1, point2)
@@ -274,12 +275,15 @@ def compute_distance_matrix_parallel(df):
 """ Computing the distance function. [Warning] it may take sometime to finish...
 """
 data = copy.copy(HFR)
-load = True # Change it to false if want to load from file..
 FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
 
+load = True and os.path.exists(FLOC) # Change it to false if want to load from file..
+
 if load == True:
+    print("loading distance matrix")
     distance_matrix = np.load(f"{FLOC}.npz")["arr_0"]
 else:
+    print("creating distance matrix")
     distance_matrix = compute_distance_matrix_parallel(data)
     np.savez(f"{FLOC}", distance_matrix)
     
@@ -328,7 +332,11 @@ if __name__ == '__main__':
         attack_camp.append(stats)
         
     attack_camp = pd.DataFrame(attack_camp, columns=COLS)
-    attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False) # Apply the filter NR > 1K or NU > 1K or APU > 24?
+    attack_camp = attack_camp[(attack_camp["NR"] >= 5000) |
+                              (attack_camp["NU"] >= 5000) | 
+                              (attack_camp["AUPPU"] > 24) 
+                              ]
+    attack_camp_stats = attack_camp.sort_values(by=["NR"], ascending=False)
 
 
     all_features = ["id", "client_ip", "ISP", "is_proxy", #IP info
@@ -342,13 +350,8 @@ if __name__ == '__main__':
                 "cluster_id"
                 ]
 
-    fout = os.getcwd() + "/../data/Results.xlsx"
+    fout = os.getcwd() + "/../" + config.RESULTS_FLOC
     writer = pd.ExcelWriter(fout, engine='xlsxwriter')
     HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
     attack_camp_stats[COLS].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
-
-    
-
-
-
-
+    writer.close()

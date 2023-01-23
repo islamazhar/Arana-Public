@@ -2,6 +2,8 @@ import pandas as pd
 # import libs.config_anonymize as config
 import libs.config as config
 import os
+import json
+import ast
 
 """ getting stats of the clusters """
 cols = ["NR", "NU", "FNUA", "AUPPU", "FUIB", "FCIB", "FPIB", "FTP", "FSPIB", "# ISP",  "DATES_active", "# IPS", "zxcvbn_0","zxcvbn_1", "comp_users", "flagged_comp_users", "total_pairs", "FF", "FVU", "y"] # Average Acitivity duration per day?
@@ -42,6 +44,9 @@ def breach_db_stat(data):
 def get_total_usernames(data):
     usernames = []
     for username in data["usernames"]:
+        # print("username -->", username) # This is a set
+        username = ast.literal_eval(username)
+        # username = json.loads(username)
         usernames.extend(username)
     return len(set(usernames))
 
