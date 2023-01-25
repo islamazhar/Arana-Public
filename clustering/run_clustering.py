@@ -49,7 +49,7 @@ def my_distance_fn_args(args):
 
 import geoip2.database
 def get_subnet_mask(ip):
-    print(ip)
+    # print(ip)
     try:
         with geoip2.database.Reader(os.getcwd() + "/../" + config.GEO_IP_FLOC + '/GeoIP2-ISP.mmdb') as reader:
             response = reader.isp(ip)
@@ -99,7 +99,7 @@ def get_breach_db_distance(point1, point2): #6
               
     result = 0.0
     # features = ["FPIB", "FSPIB", "FUIB", "FCIB", "FICIB", "FTP"]
-    features = ["FPIB", "FTP"] # is removed to combine Digital Ocean one. [fixme:] Use the upper features.
+    features = ["FPIB", "FTP"]
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -116,7 +116,7 @@ def get_breach_db_distance(point1, point2): #6
 
 
 def get_user_agent_distance(point1, point2): #3
-    # _json_cnt, FNUA, NUA
+    # *_json_cnt, FNUA, NUA
     features1 = ["os_json_cnt", "app_json_cnt", "browser_json_cnt"]
     result = 0.0
     for feature in features1:
@@ -160,9 +160,8 @@ def get_result_distance(point1, point2): #2
     assert result <= 1
     return result 
 
-# I think invalid common usernames gives more better signal?
-def get_common_usernames(point1, point2, verbose=False): #1
-    # get common users can also consider removing it.
+
+def get_common_usernames(point1, point2, verbose=False):
     result = 0.0
     a = point1["usernames"]
     b = point2["usernames"]
@@ -189,7 +188,10 @@ def get_zxcvbn_ratio(point1, point2): #2
 
 def get_volumetric_distance(point1, point2): #2
     result = 0.0
-    features = ["NR", "NU" , pers_config["auppu"]] # \fixme column name
+    features = ["NR", "NU"]  
+    if config.WITH_PW_FLAG:
+        features.append(pers_config["auppu"]) # \fixme column name
+    
     for feature in  features:
         x = float(point1[feature])
         y = float(point2[feature])
@@ -202,7 +204,7 @@ def my_distance_fn(point1, point2):
     
     result = 0.0
     v = 0.5/2.0
-    v1 = 0.5/(9.0 if config.WITH_PW_FLAG else 7.0)
+    v1 = 0.5/(9.0 if config.WITH_PW_FLAG else 6.0)
     
     result += v*get_IP_distance(point1, point2) 
     result += v*get_date_distance(point1, point2)
@@ -308,11 +310,12 @@ if __name__ == '__main__':
     N = len(HFR)
     
     
-    
+    FLOC_SUFFIX =  "_with_pw" if config.WITH_PW_FLAG else "_without_pw"
     """ Computing the distance function. [Warning] it may take sometime to finish...
     """
     data = copy.copy(HFR)
-    FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC
+    FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC + FLOC_SUFFIX
+    
     # print(FLOC)
     load = False and os.path.exists(FLOC + ".npz") # Change it to false if want to load from file..
 
@@ -326,7 +329,6 @@ if __name__ == '__main__':
     
     distance_threshold, _ = calculate_distance_threshold(distance_matrix)
     print("Distance Threshold is = ", distance_threshold)
-    distance_threshold = 0.4537419792678621
 
 
     # running the clustering
@@ -368,7 +370,7 @@ if __name__ == '__main__':
                 "cluster_id"
                 ]
 
-    fout = os.getcwd() + "/../" + config.RESULTS_FLOC
+    fout = os.getcwd() + "/../" + config.RESULTS_FLOC + FLOC_SUFFIX
     writer = pd.ExcelWriter(fout, engine='xlsxwriter')
     HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
     attack_camp_stats[COLS].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
