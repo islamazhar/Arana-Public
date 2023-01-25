@@ -12,6 +12,7 @@ import os
 from sklearn.cluster import AgglomerativeClustering
 from kneed import KneeLocator
 from ipaddress import IPv4Address
+from libs.whois import get_subnet_mask
 
 
 # import libs.config_anonymize as config
@@ -47,20 +48,7 @@ def my_distance_fn_args(args):
     j = args[2]
     return i, j, my_distance_fn(df.iloc[i], df.iloc[j])
 
-import geoip2.database
-def get_subnet_mask(ip):
-    # print(ip)
-    try:
-        with geoip2.database.Reader(os.getcwd() + "/../" + config.GEO_IP_FLOC + '/GeoIP2-ISP.mmdb') as reader:
-            response = reader.isp(ip)
-        return response.network
-    except Exception as e:
-        # print(e)
-        #if e is FileNotFoundError then send an warning...
-        if e is FileNotFoundError or e is PermissionError:
-            print("Expection in get_subnet_mask Error is = " + e)
-            sys.exit(1)
-        return "NA"
+
 
 
 def get_IP_distance(point1, point2): #2
