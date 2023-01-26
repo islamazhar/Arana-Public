@@ -305,7 +305,7 @@ if __name__ == '__main__':
     FLOC = os.getcwd() + "/../" + config.DISTANCE_MATRIX_FLOC + FLOC_SUFFIX
     
     # print(FLOC)
-    load = False and os.path.exists(FLOC + ".npz") # Change it to false if want to load from file..
+    load = True and os.path.exists(FLOC + ".npz") # Change it to false if want to load from file..
 
     if load == True:
         print("loading distance matrix")
@@ -358,7 +358,7 @@ if __name__ == '__main__':
                 "cluster_id"
                 ]
 
-    fout = os.getcwd() + "/../" + config.RESULTS_FLOC + FLOC_SUFFIX
+    fout = os.getcwd() + "/../" + config.RESULTS_FLOC + FLOC_SUFFIX + ".xlsx"
     writer = pd.ExcelWriter(fout, engine='xlsxwriter')
     HFR[all_features].to_excel(writer, sheet_name="Lsets", startrow=0, index=False)
     attack_camp_stats[COLS].to_excel(writer, sheet_name=f'campaign_stats', startrow=0, index=False)
