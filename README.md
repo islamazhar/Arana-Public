@@ -19,7 +19,7 @@ If you use any part of our code or paper please cite our paper.
 ```
 @inproceedings {islamArayna23,
 author = {Mazharul Islam and Marina Sanusi Bohuk and Paul Chung and Thomas Ristenpart and Rahul Chatterjee},
-title = {Araña: Discovering and Characterizing Password Guessing Attacks in Practice},
+title = {Ara\~{n}a: Discovering and Characterizing Password Guessing Attacks in Practice},
 booktitle = {32nd USENIX Security Symposium (USENIX Security 23)},
 year = {2023},
 isbn = {},
