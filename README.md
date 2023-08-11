@@ -1,6 +1,6 @@
 <h1 align="center">Araña: Discovering and Characterizing Password Guessing Attacks in Practice</h1>
 
-Araña is a tool for identifying  attack campaigns from login logs. We detail the pipeline of this tool in our USENIX Seuciryt 2023 paper [Araña: Discovering and Characterizing Password Guessing Attacks in Practice](https://www.usenix.org/conference/usenixsecurity23/presentation/islam). This repository contains a proof of concept implementation of Araña on the login logs collected via our prior work [Gossamer (USENIX Security 2022)](https://www.usenix.org/conference/usenixsecurity22/presentation/sanusi-bohuk).
+Araña is a tool for identifying  attack campaigns from login logs. We detail the pipeline of this tool in our USENIX Security 2023 paper [Araña: Discovering and Characterizing Password Guessing Attacks in Practice](https://www.usenix.org/conference/usenixsecurity23/presentation/islam). This repository contains a proof of concept implementation of Araña on the login logs collected via our prior work [Gossamer (USENIX Security 2022)](https://www.usenix.org/conference/usenixsecurity22/presentation/sanusi-bohuk).
 
 Steps to run
 ----------------------------------------------------
